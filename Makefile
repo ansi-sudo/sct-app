@@ -1,12 +1,11 @@
 CC ?= gcc
-CXX ?= g++
-CFLAGS += $(shell sdl2-config --cflags)
-LDFLAGS += $(shell sdl2-config --libs) -lSDL2_ttf -lSDL2_image
+CFLAGS ?= -Wall -O2 $(shell pkg-config --cflags sdl2 SDL2_ttf SDL2_image)
+LDFLAGS ?= $(shell pkg-config --libs sdl2 SDL2_ttf SDL2_image)
 
-all: sct-app
+all: my-app
 
-sct-app: main.c
-	$(CC) $(CFLAGS) -o sct-app main.c $(LDFLAGS)
+my-app: main.c
+    $(CC) $(CFLAGS) main.c -o my-app $(LDFLAGS)
 
 clean:
-	rm -f sct-app
+    rm -f my-app
