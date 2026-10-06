@@ -1,12 +1,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>
 #include <stdio.h>
 
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define FONT_SIZE 48
-#define SPLASH_DURATION_MS 3000
 
 int main(void) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -16,11 +14,7 @@ int main(void) {
 
     if (TTF_Init() < 0) {
         fprintf(stderr, "TTF_Init error: %s\n", TTF_GetError());
-        return 1;
-    }
-
-    if (IMG_Init(IMG_INIT_PNG) == 0) {
-        fprintf(stderr, "IMG_Init error: %s\n", IMG_GetError());
+        SDL_Quit();
         return 1;
     }
 
@@ -30,38 +24,32 @@ int main(void) {
         SCREEN_W, SCREEN_H,
         SDL_WINDOW_FULLSCREEN
     );
-    SDL_Renderer *ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE);
-
-    SDL_Surface *splash_surf = IMG_Load("/usr/share/sct-app/splash.png");
-    if (!splash_surf) {
-        fprintf(stderr, "Failed to load splash: %s\n", IMG_GetError());
-        //
-    } else {
-        SDL_Texture *splash_tex = SDL_CreateTextureFromSurface(ren, splash_surf);
-        SDL_FreeSurface(splash_surf);
-
-        SDL_RenderClear(ren);
-        SDL_RenderCopy(ren, splash_tex, NULL, NULL);
-        SDL_RenderPresent(ren);
-
-        SDL_Delay(SPLASH_DURATION_MS);
-
-        SDL_DestroyTexture(splash_tex);
+    if (!win) {
+        fprintf(stderr, "SDL_CreateWindow error: %s\n", SDL_GetError());
+        goto cleanup;
     }
 
-    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-    SDL_RenderClear(ren);
+    // Software renderer works well on the Car Thing
+    SDL_Renderer *ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE);
+    if (!ren) {
+        fprintf(stderr, "SDL_CreateRenderer error: %s\n", SDL_GetError());
+        goto cleanup;
+    }
 
     TTF_Font *font = TTF_OpenFont("/usr/share/fonts/dejavu/DejaVuSans.ttf", FONT_SIZE);
     if (!font) {
         fprintf(stderr, "TTF_OpenFont error: %s\n", TTF_GetError());
-        return 1;
+        goto cleanup;
     }
 
     SDL_Color white = {255, 255, 255, 255};
     SDL_Surface *surf = TTF_RenderUTF8_Blended(font, "Hello, World!", white);
-    SDL_Texture *tex = SDL_CreateTextureFromSurface(ren, surf);
+    if (!surf) {
+        fprintf(stderr, "TTF_RenderUTF8_Blended error: %s\n", TTF_GetError());
+        goto cleanup;
+    }
 
+    SDL_Texture *tex = SDL_CreateTextureFromSurface(ren, surf);
     SDL_Rect dst = {
         (SCREEN_W - surf->w) / 2,
         (SCREEN_H - surf->h) / 2,
@@ -69,9 +57,14 @@ int main(void) {
     };
 
     SDL_FreeSurface(surf);
+
+    // Clear screen to black, draw text, and present
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    SDL_RenderClear(ren);
     SDL_RenderCopy(ren, tex, NULL, &dst);
     SDL_RenderPresent(ren);
 
+    // Event loop to keep the app running until closed
     SDL_Event e;
     while (1) {
         while (SDL_PollEvent(&e)) {
@@ -81,11 +74,11 @@ int main(void) {
     }
 
 done:
-    SDL_DestroyTexture(tex);
-    TTF_CloseFont(font);
-    SDL_DestroyRenderer(ren);
-    SDL_DestroyWindow(win);
-    IMG_Quit();
+    if (tex) SDL_DestroyTexture(tex);
+    if (font) TTF_CloseFont(font);
+cleanup:
+    if (ren) SDL_DestroyRenderer(ren);
+    if (win) SDL_DestroyWindow(win);
     TTF_Quit();
     SDL_Quit();
     return 0;
