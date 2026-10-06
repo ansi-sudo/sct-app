@@ -1,11 +1,8 @@
-CC ?= gcc
-CFLAGS ?= -Wall -O2 $(shell pkg-config --cflags sdl2 SDL2_ttf SDL2_image)
-LDFLAGS ?= $(shell pkg-config --libs sdl2 SDL2_ttf SDL2_image)
+# Allow Buildroot to pass CC, CFLAGS, and LDFLAGS
+all: sct-app
 
-all: my-app
-
-my-app: main.c
-    $(CC) $(CFLAGS) main.c -o my-app $(LDFLAGS)
+sct-app: main.c
+$(CC) $(CFLAGS) main.c -o sct-app $(LDFLAGS) -lSDL2 -lSDL2_ttf -lSDL2_image
 
 clean:
-    rm -f my-app
+rm -f sct-app

@@ -1,9 +1,0 @@
-config BR2_PACKAGE_SCT_APP
-    bool "sct-app"
-    select BR2_PACKAGE_SDL2
-    select BR2_PACKAGE_SDL2_TTF
-    select BR2_PACKAGE_SDL2_IMAGE
-    select BR2_PACKAGE_DEJAVU
-    default y
-    help
-      Custom Car Thing application.
